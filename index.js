@@ -55,7 +55,8 @@ const setupReauth = async () => {
         } catch (err) {
             console.trace(err)
         }
-    }, tokens.expires_in * 1000)
+    // reauth 5 min early as then there is no downtime
+    }, (tokens.expires_in - 300) * 1000)
 }
 
 (async function () {
