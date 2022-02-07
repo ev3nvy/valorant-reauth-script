@@ -1,3 +1,4 @@
+const { Agent } = require('https');
 const axios = require('axios').default;
 
 const USERNAME = "USERNAME";
@@ -8,6 +9,14 @@ let headers = new Object();
 
 let ssid_cookie = new String();
 let client_version = new String();
+
+const ciphers = [
+    'TLS_CHACHA20_POLY1305_SHA256',
+    'TLS_AES_128_GCM_SHA256',
+    'TLS_AES_256_GCM_SHA384',
+    'TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256'
+];
+const agent = new Agent({ ciphers: ciphers.join(':'), honorCipherOrder: true, minVersion: 'TLSv1.2' });
 
 const parseUrl = (uri) => {
     let url = new URL(uri)
@@ -43,10 +52,15 @@ const setupReauth = async () => {
                 client_id: "play-valorant-web-prod",
                 nonce: 1,
                 redirect_uri: "https://playvalorant.com/opt_in",
-                response_type: "token id_token"
-            }, { headers: {
-                Cookie: ssid_cookie
-            }});
+                response_type: "token id_token",
+                scope: "account openid"
+            }, { 
+                headers: {
+                    Cookie: ssid_cookie,
+                    'User-Agent': 'RiotClient/43.0.1.4195386.4190634 rso-auth (Windows; 10;;Professional, x64)'
+                },
+                httpsAgent: agent
+            });
 
             ssid_cookie = access_tokens.headers['set-cookie'].find(elem => /^ssid/.test(elem));
 
@@ -64,7 +78,13 @@ const setupReauth = async () => {
         client_id: "play-valorant-web-prod",
         nonce: 1,
         redirect_uri: "https://playvalorant.com/opt_in",
-        response_type: "token id_token"
+        response_type: "token id_token",
+        scope: "account openid"
+    }, {
+        headers: {
+            'User-Agent': 'RiotClient/43.0.1.4195386.4190634 rso-auth (Windows; 10;;Professional, x64)'
+        },
+        httpsAgent: agent
     })).headers['set-cookie'].find(elem => /^asid/.test(elem));
 
     client_version = (await axios.get('https://valorant-api.com/v1/version')).data.data.riotClientVersion;
@@ -73,9 +93,13 @@ const setupReauth = async () => {
         type: "auth",
         username: USERNAME,
         password: PASSWORD
-    }, { headers: {
-        Cookie: cookie
-    }});
+    }, {
+        headers: {
+            Cookie: cookie,
+            'User-Agent': 'RiotClient/43.0.1.4195386.4190634 rso-auth (Windows; 10;;Professional, x64)'
+        },
+        httpsAgent: agent
+    });
 
     ssid_cookie = access_tokens.headers['set-cookie'].find(elem => /^ssid/.test(elem));
 
